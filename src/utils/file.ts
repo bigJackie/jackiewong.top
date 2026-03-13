@@ -35,7 +35,7 @@ const previewableExt = new Set([
 ])
 
 function normalizePublicFileUrl(url: string) {
-  const clean = url.split('?')[0].split('#')[0]
+  const clean = url?.split('?')[0]?.split('#')[0] ?? ''
   const marker = '/files/'
   const index = clean.indexOf(marker)
   if (index < 0) return null
