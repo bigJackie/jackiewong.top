@@ -41,13 +41,20 @@ function normalizePublicFileUrl(url: string) {
   if (index < 0) return null
 
   const rel = clean.slice(index + marker.length)
-  const encoded = rel
+  const decodedSegments = rel
     .split('/')
-    .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
-    .join('/')
+    .map((segment) => {
+      try {
+        return decodeURIComponent(segment)
+      } catch {
+        return segment
+      }
+    })
+  const decodedRel = decodedSegments.join('/')
+  const encoded = decodedSegments.map((segment) => encodeURIComponent(segment)).join('/')
 
   return {
-    rel,
+    rel: decodedRel,
     url: `/files/${encoded}`,
   }
 }
