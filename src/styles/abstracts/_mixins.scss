@@ -1,0 +1,17 @@
+@mixin flex($direction: row, $justify: center, $align: center, $gap: 0) {
+  display: flex;
+  flex-direction: $direction;
+  align-items: $align;
+  justify-content: $justify;
+  gap: $gap;
+}
+
+@mixin container($max: var(--container)) {
+  width: min(100%, #{$max});
+  margin-inline: auto;
+}
+
+@mixin selectNone {
+  user-select: none;
+  -moz-user-select: none;
+}

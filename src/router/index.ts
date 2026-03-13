@@ -6,37 +6,27 @@ const router = createRouter({
     {
       path: '/',
       name: 'Home',
-      component: () => import('../views/Home.vue'),
+      component: () => import('../views/HomeView.vue'),
     },
     {
       path: '/blog',
       name: 'Blog',
-      component: () => import('../views/Blog.vue'),
+      component: () => import('../views/BlogView.vue'),
     },
     {
-      path: '/blog/:id',
+      path: '/blog/:category/:id',
       name: 'BlogPost',
       component: () => import('../views/BlogPost.vue'),
     },
     {
       path: '/gallery',
       name: 'Gallery',
-      component: () => import('../views/Gallery.vue'),
-    },
-    {
-      path: '/gallery/:id',
-      name: 'GalleryItem',
-      component: () => import('../views/GalleryItem.vue'),
+      component: () => import('../views/GalleryView.vue'),
     },
     {
       path: '/files',
       name: 'Files',
-      component: () => import('../views/Files.vue'),
-    },
-    {
-      path: '/about',
-      name: 'About',
-      component: () => import('../views/About.vue'),
+      component: () => import('../views/FilesView.vue'),
     },
   ],
 })

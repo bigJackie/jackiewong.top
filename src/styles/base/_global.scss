@@ -1,0 +1,27 @@
+body {
+  font-family: 'Avenir', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: var(--text-color-primary);
+  background: var(--background-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+::selection {
+  background: var(--line-color);
+}
+
+::-moz-selection {
+  background: var(--line-color);
+}

@@ -1,0 +1,6 @@
+@use '../abstracts/mixins' as mx;
+
+.view-shell {
+  @include mx.container();
+  padding: var(--space-4) var(--space-2);
+}
