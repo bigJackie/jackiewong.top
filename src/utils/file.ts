@@ -1,17 +1,12 @@
 import { type FileItem } from '@/constants'
 
-const fileModules = import.meta.glob('@public/files/**/*.*', {
-  eager: true,
-  import: 'default',
-}) as Record<string, string>
-
 type FileManifest = Record<string, { size?: number; modified?: string }>
 
 let manifestCache: Promise<FileManifest | null> | null = null
 
 async function loadFileManifest() {
   if (!manifestCache) {
-    manifestCache = fetch('/files-manifest.json', { cache: 'no-cache' })
+    manifestCache = fetch(`${import.meta.env.BASE_URL}files-manifest.json`, { cache: 'no-cache' })
       .then(async (res) => {
         if (!res.ok) return null
         return (await res.json()) as FileManifest
@@ -39,15 +34,29 @@ const previewableExt = new Set([
   'm4a',
 ])
 
-function parsePath(path: string): FileItem | null {
-  const resolvedPath = fileModules[path]
-  if (!resolvedPath) return null
-
+function normalizePublicFileUrl(url: string) {
+  const clean = url.split('?')[0].split('#')[0]
   const marker = '/files/'
-  const index = path.lastIndexOf(marker)
+  const index = clean.indexOf(marker)
   if (index < 0) return null
 
-  const rel = path.slice(index + marker.length)
+  const rel = clean.slice(index + marker.length)
+  const encoded = rel
+    .split('/')
+    .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
+    .join('/')
+
+  return {
+    rel,
+    url: `/files/${encoded}`,
+  }
+}
+
+function parsePath(url: string, meta?: { size?: number; modified?: string }): FileItem | null {
+  const normalized = normalizePublicFileUrl(url)
+  if (!normalized) return null
+
+  const rel = normalized.rel
   const parts = rel.split('/')
   if (!parts.length) return null
 
@@ -69,60 +78,30 @@ function parsePath(path: string): FileItem | null {
     category,
     ext,
     year,
-    path: resolvedPath,
-    size: null,
-    modified: '',
+    path: normalized.url,
+    size: typeof meta?.size === 'number' ? meta.size : null,
+    modified: typeof meta?.modified === 'string' ? meta.modified : '',
     previewable: previewableExt.has(ext),
   }
 }
 
-export function createFileItems() {
-  return Object.keys(fileModules)
-    .map((path) => parsePath(path))
-    .filter((item): item is FileItem => !!item)
-    .sort((a, b) => a.name.localeCompare(b.name))
+export async function createFileItems() {
+  const manifest = await loadFileManifest()
+  if (!manifest) return []
+
+  const uniq = new Map<string, FileItem>()
+
+  for (const [url, meta] of Object.entries(manifest)) {
+    const item = parsePath(url, meta)
+    if (!item) continue
+    uniq.set(item.id, item)
+  }
+
+  return Array.from(uniq.values()).sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export async function withFileMeta(items: FileItem[]) {
-  const manifest = await loadFileManifest()
-
-  if (manifest) {
-    return items
-      .map((item) => {
-        const meta = manifest[item.path]
-        return {
-          ...item,
-          size: typeof meta?.size === 'number' ? meta.size : item.size,
-          modified: typeof meta?.modified === 'string' ? meta.modified : item.modified,
-        }
-      })
-      .sort((a, b) => {
-        const aTime = a.modified ? Date.parse(a.modified) : 0
-        const bTime = b.modified ? Date.parse(b.modified) : 0
-        if (aTime !== bTime) return bTime - aTime
-        return a.name.localeCompare(b.name)
-      })
-  }
-
-  const list = await Promise.all(
-    items.map(async (item) => {
-      try {
-        const response = await fetch(item.path, { method: 'HEAD' })
-        const size = Number(response.headers.get('content-length'))
-        const modified = response.headers.get('last-modified') || ''
-
-        return {
-          ...item,
-          size: Number.isFinite(size) ? size : null,
-          modified,
-        }
-      } catch {
-        return item
-      }
-    }),
-  )
-
-  return list.sort((a, b) => {
+  return [...items].sort((a, b) => {
     const aTime = a.modified ? Date.parse(a.modified) : 0
     const bTime = b.modified ? Date.parse(b.modified) : 0
     if (aTime !== bTime) return bTime - aTime

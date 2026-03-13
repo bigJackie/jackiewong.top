@@ -5,10 +5,10 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { locale } = useI18n()
-const files = ref<FileItem[]>(createFileItems())
+const files = ref<FileItem[]>([])
 
 onMounted(async () => {
-  files.value = await withFileMeta(files.value)
+  files.value = await withFileMeta(await createFileItems())
 })
 
 function modifiedText(modified: string) {

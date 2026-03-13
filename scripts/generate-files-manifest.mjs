@@ -38,13 +38,23 @@ async function buildManifest() {
 
   for (const fullPath of allFiles) {
     const stat = await fs.stat(fullPath)
-    const rel = fullPath.replace(filesRoot + path.sep, '').split(path.sep).join('/')
-    const url = `/files/${encodeURI(rel)}`
-
-    manifest[url] = {
+    const rel = fullPath
+      .replace(filesRoot + path.sep, '')
+      .split(path.sep)
+      .join('/')
+    const meta = {
       size: stat.size,
       modified: stat.mtime.toISOString(),
     }
+
+    const rawUrl = `/files/${rel}`
+    const encodedUrl = `/files/${rel
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')}`
+
+    manifest[rawUrl] = meta
+    manifest[encodedUrl] = meta
   }
 
   await fs.writeFile(outputFile, JSON.stringify(manifest, null, 2), 'utf8')
