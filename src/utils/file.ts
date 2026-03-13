@@ -5,6 +5,23 @@ const fileModules = import.meta.glob('@public/files/**/*.*', {
   import: 'default',
 }) as Record<string, string>
 
+type FileManifest = Record<string, { size?: number; modified?: string }>
+
+let manifestCache: Promise<FileManifest | null> | null = null
+
+async function loadFileManifest() {
+  if (!manifestCache) {
+    manifestCache = fetch('/files-manifest.json', { cache: 'no-cache' })
+      .then(async (res) => {
+        if (!res.ok) return null
+        return (await res.json()) as FileManifest
+      })
+      .catch(() => null)
+  }
+
+  return manifestCache
+}
+
 const previewableExt = new Set([
   'png',
   'jpg',
@@ -67,6 +84,26 @@ export function createFileItems() {
 }
 
 export async function withFileMeta(items: FileItem[]) {
+  const manifest = await loadFileManifest()
+
+  if (manifest) {
+    return items
+      .map((item) => {
+        const meta = manifest[item.path]
+        return {
+          ...item,
+          size: typeof meta?.size === 'number' ? meta.size : item.size,
+          modified: typeof meta?.modified === 'string' ? meta.modified : item.modified,
+        }
+      })
+      .sort((a, b) => {
+        const aTime = a.modified ? Date.parse(a.modified) : 0
+        const bTime = b.modified ? Date.parse(b.modified) : 0
+        if (aTime !== bTime) return bTime - aTime
+        return a.name.localeCompare(b.name)
+      })
+  }
+
   const list = await Promise.all(
     items.map(async (item) => {
       try {
