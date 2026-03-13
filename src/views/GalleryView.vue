@@ -164,7 +164,7 @@ function onImageLoad(id: string, event: Event) {
               :class="`gallery-item--${item.kind}`"
             >
               <a
-                :href="item.href"
+                :href="`${item.href}${itemTitle(item)}`"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="gallery-link"
